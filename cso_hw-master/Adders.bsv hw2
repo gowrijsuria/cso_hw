@@ -1,0 +1,46 @@
+import Multiplexer::*;
+import BasicGates::*;
+// Full adder functions
+
+function Bit#(1) fa_sum( Bit#(1) a, Bit#(1) b, Bit#(1) c_in );
+    return xor1( xor1( a, b ), c_in );
+endfunction
+
+function Bit#(1) fa_carry( Bit#(1) a, Bit#(1) b, Bit#(1) c_in );
+    return or1( and1( a, b ), and1( xor1( a, b ), c_in ) );
+endfunction
+
+// 4 Bit full adder
+
+function Bit#(5) add4( Bit#(4) a, Bit#(4) b, Bit#(1) c_in );
+	Bit#(4) s=0;
+	Bit#(5) c={?,c_in};
+	for(Integer i=0;i<4;i=i+1)
+	begin
+	s[i]=fa_sum(a[i],b[i],c[i]);
+	c[i+1]=fa_carry(a[i],b[i],c[i]);
+	end
+	return {c[4],s};
+endfunction
+
+// 8 Bit ripple carry adder
+function Bit#(9) add8( Bit#(8) a, Bit#(8) b, Bit#(1) c_in );
+	Bit#(9) ans;
+	ans[4:0]=add4(a[3:0],b[3:0],c_in);
+	Bit#(1) carry=ans[4];
+	ans[8:4]=add4(a[7:4],b[7:4],carry);    
+	return ans[8:0];
+endfunction
+
+// 8 Bit carry select adder
+function Bit#(9) cs_add8( Bit#(8) a, Bit#(8) b, Bit#(1) c_in );
+	Bit#(9) s=0;
+	Bit#(5) x=0;
+	Bit#(5) z=0;
+	s[4:0]=add4(a[3:0],b[3:0],c_in);
+	x=add4(a[7:4],b[7:4],0);
+	z=add4(a[7:4],b[7:4],1);
+	s[8] =multiplexer_n(s[4],x[4],z[4]);
+	s[7:4]=multiplexer_n(s[4],x[3:0],z[3:0]);
+	return {s};
+endfunction
